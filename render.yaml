@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: alicreates-portfolio
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SITE_NAME
+        value: AliCreates
+      - key: DATABASE_URL
+        sync: false
+      - key: PGSSL
+        value: "true"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: WHATSAPP_NUMBER
+        sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: INSTAGRAM_URL
+        sync: false
+      - key: TIKTOK_URL
+        sync: false
+      - key: FACEBOOK_URL
+        sync: false
+      - key: X_URL
+        sync: false
