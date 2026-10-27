@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const path = require("path");
 const crypto = require("crypto");
@@ -62,7 +61,7 @@ app.use(helmet({
 }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false, limit: "1mb" }));
-app.use(express.static(path.join(__dirname, "Public"), { maxAge: isProd ? "1h" : 0 }));
+app.use(express.static(path.join(__dirname, "public"), { maxAge: isProd ? "1h" : 0 }));
 
 const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(48).toString("hex");
 if (pool) {
@@ -132,27 +131,6 @@ async function initDb() {
     await pool.query("INSERT INTO site_settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO NOTHING", [key, value]);
   }
 }
-
-let dbInitPromise = null;
-
-async function ensureDbInitialized(req, res, next) {
-  if (!pool || req.path === "/api/health") return next();
-  try {
-    if (!dbInitPromise) {
-      dbInitPromise = initDb().catch(error => {
-        dbInitPromise = null;
-        throw error;
-      });
-    }
-    await dbInitPromise;
-    next();
-  } catch (error) {
-    next(error);
-  }
-}
-
-app.use(ensureDbInitialized);
-
 async function query(sql, params=[]) {
   if (!pool) throw new Error("Database is not configured. Set DATABASE_URL.");
   return pool.query(sql, params);
@@ -270,10 +248,10 @@ app.post("/api/admin/change-password",requireAdmin,async(req,res,next)=>{
   }catch(e){next(e)}
 });
 
-app.get("/admin", (req,res)=>res.sendFile(path.join(__dirname,"Public","admin.html")));
+app.get("/admin", (req,res)=>res.sendFile(path.join(__dirname,"public","admin.html")));
 app.get("*", (req,res,next) => {
   if(req.path.startsWith("/api/"))return res.status(404).json({error:"API endpoint not found."});
-  res.sendFile(path.join(__dirname,"Public","index.html"),err=>{if(err)next(err)});
+  res.sendFile(path.join(__dirname,"public","index.html"),err=>{if(err)next(err)});
 });
 app.use((err,req,res,next)=>{
   console.error(err.stack || err);
@@ -284,15 +262,9 @@ app.use((err,req,res,next)=>{
 
 async function start(){
   if(!pool){console.error("Cannot start: configure DATABASE_URL in .env");process.exit(1);}
-  if (!dbInitPromise) dbInitPromise = initDb();
-  await dbInitPromise;
+  await initDb();
   const server=app.listen(port,()=>console.log(`AliCreates running on port ${port}`));
   const shutdown=()=>server.close(()=>{pool.end().finally(()=>process.exit(0))});
   process.on("SIGTERM",shutdown);process.on("SIGINT",shutdown);
 }
-
-module.exports = app;
-
-if (require.main === module) {
-  start().catch(e=>{console.error("Startup failed:",e);process.exit(1)});
-}
+start().catch(e=>{console.error("Startup failed:",e);process.exit(1)});
